@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Absen SECURITIRKAM</title>
 <style>
-body{font-family:'Arial';background:#121212;color:#eee;margin:0;padding:20px}.container{max-width:600px;margin:auto;background:#1e1e1e;padding:20px;border-radius:10px}h1{text-align:center;color:#4da3ff}label{display:block;margin-top:15px;font-weight:bold}input,textarea{width:100%;padding:10px;margin-top:5px;background:#333;border:1px solid #444;border-radius:5px;color:#eee;box-sizing:border-box}button{background:#4da3ff;color:#121212;padding:12px 20px;border:none;border-radius:5px;cursor:pointer;width:100%;margin-top:20px;font-size:16px;font-weight:bold}button:disabled{background:#555}#status{text-align:center;margin-top:10px;font-weight:bold}
+body{font-family:'Arial';background:#121212;color:#eee;margin:0;padding:20px}.container{max-width:600px;margin:auto;background:#1e1e1e;padding:20px;border-radius:10px}h1{text-align:center;color:#4da3ff}label{display:block;margin-top:15px;font-weight:bold}input,textarea{width:100%;padding:10px;margin-top:5px;background:#333;border:1px solid #444;border-radius:5px;color:#eee;box-sizing:border-box}#ttdCanvas{background:#fff;border:2px dashed #555;border-radius:5px;touch-action:none}button{background:#4da3ff;color:#121212;padding:12px 20px;border:none;border-radius:5px;cursor:pointer;width:100%;margin-top:10px;font-size:16px;font-weight:bold}.btn-hapus{background:#555;color:#eee}.btn-kirim{background:#4da3ff}#status{text-align:center;margin-top:10px;font-weight:bold}
 </style>
 </head>
 <body>
@@ -16,42 +16,54 @@ body{font-family:'Arial';background:#121212;color:#eee;margin:0;padding:20px}.co
 <input type="text" id="nama" required>
 
 <label>Shift / Tugas</label>
-<input type="text" id="shift" placeholder="Contoh: Pagi, Patroli, Jaga Pintu" required>
+<input type="text" id="shift" placeholder="Contoh: Pagi, Patroli" required>
+
+<label>Tanda Tangan</label>
+<canvas id="ttdCanvas" width="500" height="150"></canvas>
+<button type="button" class="btn-hapus" id="btnHapus">Hapus TTD</button>
 
 <label>Catatan</label>
 <textarea id="catatan" rows="3"></textarea>
 
-<button type="submit" id="btnKirim">KIRIM ABSEN</button>
+<button type="submit" class="btn-kirim" id="btnKirim">KIRIM ABSEN</button>
 <p id="status"></p>
 </form>
 </div>
 
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwbnx6txP9e_F70oEfoR4qzVnP-OrD3LO7FRsmqsRYMFN6D-UXNMRFmLdpVJBeXPq33og/exec"; // <-- JANGAN LUPA GANTI INI
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwQyGdRUUnQvPn5V9n7rB0WJ3zY_9PDHVoeqOFCgp0iwMk_PAqx5p6rSfB0THkfFD6MVQ/exec"; // <-- GANTI INI
+
+const canvas = document.getElementById('ttdCanvas');
+const ctx = canvas.getContext('2d');
+let drawing = false;
+
+function getPos(e){
+  const rect = canvas.getBoundingClientRect();
+  return {x: (e.touches?e.touches[0].clientX:e.clientX)-rect.left, y: (e.touches?e.touches[0].clientY:e.clientY)-rect.top}
+canvas.onmousedown = canvas.ontouchstart = e => {drawing=true; ctx.moveTo(getPos(e).x,getPos(e).y)};
+canvas.onmousemove = canvas.ontouchmove = e => {if(drawing){ctx.lineTo(getPos(e).x,getPos(e).y); ctx.strokeStyle='#000'; ctx.lineWidth=2; ctx.stroke()}};
+canvas.onmouseup = canvas.ontouchend = () => drawing=false;
+document.getElementById('btnHapus').onclick = () => ctx.clearRect(0,0,canvas.width,canvas.height);
 
 document.getElementById('formAbsen').onsubmit = async function(e){
   e.preventDefault();
   const btn = document.getElementById('btnKirim');
-  const status = document.getElementById('status');
   btn.disabled = true;
-  status.innerText = "Mengirim...";
+  document.getElementById('status').innerText = "Mengirim...";
   
   const data = {
     waktu: new Date().toLocaleString('id-ID'),
     nama: document.getElementById('nama').value,
     shift: document.getElementById('shift').value,
+    ttd: canvas.toDataURL('image/png'), // ini hasil tanda tangannya
     catatan: document.getElementById('catatan').value
   };
 
-  try {
-    await fetch(SCRIPT_URL, {method: 'POST', mode: 'no-cors', body: JSON.stringify(data)});
-    status.innerText = "✅ Absen Berhasil Terkirim ke Google Sheet!";
-    status.style.color = "#4CAF50";
-    this.reset();
-  } catch (error) {
-    status.innerText = "❌ Gagal Kirim. Cek Link Script";
-    status.style.color = "#ff6b6b";
-  }
+  await fetch(SCRIPT_URL, {method: 'POST', mode: 'no-cors', body: JSON.stringify(data)});
+  document.getElementById('status').innerText = "✅ Absen Berhasil Terkirim!";
+  document.getElementById('status').style.color = "#4CAF50";
+  this.reset();
+  ctx.clearRect(0,0,canvas.width,canvas.height);
   btn.disabled = false;
 }
 </script>
