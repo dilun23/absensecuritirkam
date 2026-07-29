@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absen Satpam Pos Bugel</title>
+<style>body{font-family:'Arial';background:#f0f2f5;padding:20px}.container{max-width:600px;margin:auto;background:white;padding:25px;border-radius:12px}label{font-weight:bold;display:block;margin-top:15px}input,button{width:100%;padding:12px;margin-top:5px;border:1px solid #ccc;border-radius:8px;font-size:16px}button{background:#27AE60;color:white;border:none}#preview{width:100%;margin-top:10px;border-radius:8px;max-height:200px}.error{color:red;font-size:14px}</style>
+</head>
+<body>
+<div class="container">
+    <h1>ABSEN SATPAM POS BUGEL</h1>
+    <form id="formAbsen">
+        <label>Nama Satpam</label><input type="text" id="nama" required>
+        <label>Shift / Keterangan</label><input type="text" id="shift" placeholder="Contoh: Shift 1, Lembur" required>
+        <label>Waktu Absen [Otomatis]</label><input type="text" id="waktu" readonly>
+        <label>Foto Selfie [WAJIB]</label>
+        <input type="file" id="foto" accept="image/*" capture="environment" required>
+        <p class="error">*Pake kamera HP. Max 2MB</p>
+        <img id="preview" src="">
+        <label>Catatan</label><input type="text" id="catatan">
+        <button type="submit">KIRIM ABSEN</button>
+    </form>
+    <div id="notif" style="display:none;color:green;margin-top:10px">Berhasil! ✅</div>
+</div>
+
+<script>
+let dataAbsen = JSON.parse(localStorage.getItem('dataAbsen')) || [];
+document.getElementById('waktu').value = new Date().toLocaleString('id-ID');
+
+document.getElementById('foto').onchange = function(e){
+    const file = e.target.files[0];
+    if(!file) return;
+    if(file.size > 2000000){ alert("Gagal: Foto lebih dari 2MB. Kecilin dulu ya"); e.target.value=""; return; }
+    const reader = new FileReader();
+    reader.onload = () => document.getElementById('preview').src = reader.result;
+    reader.readAsDataURL(file);
+}
+
+document.getElementById('formAbsen').onsubmit = function(e){
+    e.preventDefault();
+    try{
+        const dataBaru = {
+            nama: document.getElementById('nama').value,
+            shift: document.getElementById('shift').value,
+            waktu: document.getElementById('waktu').value,
+            catatan: document.getElementById('catatan').value,
+            foto: document.getElementById('preview').src
+        };
+        dataAbsen.push(dataBaru);
+        localStorage.setItem('dataAbsen', JSON.stringify(dataAbsen));
+        document.getElementById('notif').style.display = 'block';
+        document.getElementById('formAbsen').reset();
+        document.getElementById('preview').src = '';
+        setTimeout(()=>document.getElementById('notif').style.display = 'none', 3000);
+    }catch(error){
+        alert("GAGAL SIMPAN! Penyimpanan HP penuh. Hapus data lama dulu di tombol 'Lihat Data'");
+        console.log(error);
+    }
+}
+</script>
+</body>
+</html>
