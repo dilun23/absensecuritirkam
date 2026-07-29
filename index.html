@@ -1,11 +1,11 @@
-  <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Absen SECURITIRKAM</title>
 <style>
-body{font-family:Arial;background:#121212;color:#eee;margin:0;padding:20px}.container{max-width:600px;margin:auto;background:#1e1e1e;padding:20px;border-radius:10px}h1{text-align:center;color:#4da3ff}label{display:block;margin-top:15px;font-weight:bold}input,textarea{width:100%;padding:10px;margin-top:5px;background:#333;border:1px solid #444;border-radius:5px;color:#eee;box-sizing:border-box}#ttdCanvas{background:#fff;border:2px dashed #555;border-radius:5px;width:100%;height:150px;touch-action:none}.btn{padding:12px 20px;border:none;border-radius:5px;cursor:pointer;width:100%;margin-top:10px;font-weight:bold}.btn-hapus{background:#555;color:#eee}.btn-kirim{background:#4da3ff;color:#121212}#status{text-align:center;margin-top:10px;font-weight:bold}
+body{font-family:Arial;background:#121212;color:#eee;margin:0;padding:20px}.container{max-width:600px;margin:auto;background:#1e1e1e;padding:20px;border-radius:10px}h1{text-align:center;color:#4da3ff}label{display:block;margin-top:15px;font-weight:bold}input,textarea{width:100%;padding:10px;margin-top:5px;background:#333;border:1px solid #444;border-radius:5px;color:#eee;box-sizing:border-box}#ttdCanvas{background:#fff;border:2px dashed #555;border-radius:5px;width:100%;height:150px;touch-action:none;display:block}.btn{padding:12px 20px;border:none;border-radius:5px;cursor:pointer;width:100%;margin-top:10px;font-weight:bold}.btn-hapus{background:#555;color:#eee}.btn-kirim{background:#4da3ff;color:#121212}#status{text-align:center;margin-top:10px;font-weight:bold}
 </style>
 </head>
 <body>
@@ -28,31 +28,46 @@ body{font-family:Arial;background:#121212;color:#eee;margin:0;padding:20px}.cont
 </form>
 </div>
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0ttuN8cL7g7Msm9d2KnU9RKYSQa09HYY2cSEikCzBc5LSt4umg5nMEFPY5DSYn2YDDg/exec"; // <-- GANTI INI
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx45Z9cPMUpJiloDZ7-fU89yhFDfsU_uXRv3EJ9QQwBFLbI_Xudq7dy3vMWo493tAPTQg/exec"; // JANGAN LUPA GANTI
 
 const canvas = document.getElementById('ttdCanvas');
 const ctx = canvas.getContext('2d');
-canvas.width = canvas.offsetWidth; canvas.height = 150;
+
+function resizeCanvas() {
+    const ratio = Math.max(window.devicePixelRatio || 1, 1);
+    canvas.width = canvas.offsetWidth * ratio;
+    canvas.height = 150 * ratio;
+    canvas.getContext("2d").scale(ratio, ratio);
+    ctx.strokeStyle='#000'; ctx.lineWidth=3; ctx.lineCap='round';
+}
+resizeCanvas();
+
 let drawing = false;
 function getPos(e){const rect=canvas.getBoundingClientRect();let x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;let y=(e.touches?e.touches[0].clientY:e.clientY)-rect.top;return{x,y}}
-canvas.addEventListener('mousedown',e=>{drawing=true;const p=getPos(e);ctx.moveTo(p.x,p.y)});
-canvas.addEventListener('mousemove',e=>{if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke()});
-canvas.addEventListener('mouseup',()=>drawing=false);
-canvas.addEventListener('touchstart',e=>{drawing=true;const p=getPos(e);ctx.moveTo(p.x,p.y);e.preventDefault()});
+canvas.addEventListener('mousedown',e=>{drawing=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)});
+canvas.addEventListener('mousemove',e=>{if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke()});
+canvas.addEventListener('mouseup',()=>drawing=false);canvas.addEventListener('mouseleave',()=>drawing=false);
+canvas.addEventListener('touchstart',e=>{drawing=true;const p=getPos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault()});
 canvas.addEventListener('touchmove',e=>{if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault()});
 canvas.addEventListener('touchend',()=>drawing=false);
-document.getElementById('btnHapus').onclick=()=>ctx.clearRect(0,0,canvas.width,canvas.height);
+document.getElementById('btnHapus').onclick=()=>{ctx.clearRect(0,0,canvas.width,canvas.height)};
 
 document.getElementById('formAbsen').onsubmit = async function(e){
   e.preventDefault();
+  if(ctx.getContext('2d').getImageData(0,0,canvas.width,canvas.height).data.every(v=>v===0)){alert('TTD wajib diisi!');return}
   document.getElementById('inputWaktu').value = new Date().toLocaleString('id-ID');
   document.getElementById('inputTtd').value = canvas.toDataURL('image/png');
   document.getElementById('status').innerText = "Mengirim...";
-  
-  await fetch(SCRIPT_URL, {method:'POST', body:new FormData(this)});
-  document.getElementById('status').innerText = "✅ Berhasil Terkirim!";
-  document.getElementById('status').style.color="#4CAF50";
-  this.reset(); ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  try {
+    await fetch(SCRIPT_URL, {method:'POST', body:new FormData(this)});
+    document.getElementById('status').innerText = "✅ Berhasil Terkirim!";
+    document.getElementById('status').style.color="#4CAF50";
+    this.reset(); ctx.clearRect(0,0,canvas.width,canvas.height);
+  } catch(err) {
+    document.getElementById('status').innerText = "❌ Gagal Kirim";
+    document.getElementById('status').style.color="#ff6b6b";
+  }
 }
 </script>
 </body>
