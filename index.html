@@ -1,12 +1,11 @@
-<!DOCTYPE html>
+  <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Absen SECURITIRKAM</title>
 <style>
-body{font-family:'Arial';background:#121212;color:#eee;margin:0;padding:20px}.container{max-width:600px;margin:auto;background:#1e1e1e;padding:20px;border-radius:10px}h1{text-align:center;color:#4da3ff}label{display:block;margin-top:15px;font-weight:bold}input,textarea{width:100%;padding:10px;margin-top:5px;background:#333;border:1px solid #444;border-radius:5px;color:#eee;box-sizing:border-box}#ttdCanvas{background:#fff;border:2px dashed #555;border-radius:5px;width:100%;height:150px;touch-action:none} /* PENTING: touch-action:none */
-.btn{padding:12px 20px;border:none;border-radius:5px;cursor:pointer;width:100%;margin-top:10px;font-size:16px;font-weight:bold}.btn-hapus{background:#555;color:#eee}.btn-kirim{background:#4da3ff;color:#121212}#status{text-align:center;margin-top:10px;font-weight:bold}
+body{font-family:Arial;background:#121212;color:#eee;margin:0;padding:20px}.container{max-width:600px;margin:auto;background:#1e1e1e;padding:20px;border-radius:10px}h1{text-align:center;color:#4da3ff}label{display:block;margin-top:15px;font-weight:bold}input,textarea{width:100%;padding:10px;margin-top:5px;background:#333;border:1px solid #444;border-radius:5px;color:#eee;box-sizing:border-box}#ttdCanvas{background:#fff;border:2px dashed #555;border-radius:5px;width:100%;height:150px;touch-action:none}.btn{padding:12px 20px;border:none;border-radius:5px;cursor:pointer;width:100%;margin-top:10px;font-weight:bold}.btn-hapus{background:#555;color:#eee}.btn-kirim{background:#4da3ff;color:#121212}#status{text-align:center;margin-top:10px;font-weight:bold}
 </style>
 </head>
 <body>
@@ -14,109 +13,46 @@ body{font-family:'Arial';background:#121212;color:#eee;margin:0;padding:20px}.co
 <h1>ABSEN SECURITIRKAM</h1>
 <form id="formAbsen">
 <label>Nama Petugas</label>
-<input type="text" id="nama" required>
-
+<input type="text" name="nama" required>
 <label>Shift / Tugas</label>
-<input type="text" id="shift" placeholder="Contoh: Pagi, Patroli" required>
-
-<label>Tanda Tangan di kotak bawah</label>
+<input type="text" name="shift" required>
+<label>Tanda Tangan</label>
 <canvas id="ttdCanvas"></canvas>
 <button type="button" class="btn btn-hapus" id="btnHapus">Hapus TTD</button>
-
 <label>Catatan</label>
-<textarea id="catatan" rows="3"></textarea>
-
-<button type="submit" class="btn btn-kirim" id="btnKirim">KIRIM ABSEN</button>
+<textarea name="catatan" rows="3"></textarea>
+<input type="hidden" name="ttd" id="inputTtd">
+<input type="hidden" name="waktu" id="inputWaktu">
+<button type="submit" class="btn btn-kirim">KIRIM ABSEN</button>
 <p id="status"></p>
 </form>
 </div>
-
 <script>
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwwXa7aaEOYHF2enw8K5BRydPuMIELx-O7SXoL8N4-juEHw3mLNirUMsfGjRSgsMJiz/exec"; // <-- GANTI INI
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0ttuN8cL7g7Msm9d2KnU9RKYSQa09HYY2cSEikCzBc5LSt4umg5nMEFPY5DSYn2YDDg/exec"; // <-- GANTI INI
 
 const canvas = document.getElementById('ttdCanvas');
 const ctx = canvas.getContext('2d');
-// Biar pas di HP resolusinya bagus
-canvas.width = canvas.offsetWidth;
-canvas.height = 150;
-
+canvas.width = canvas.offsetWidth; canvas.height = 150;
 let drawing = false;
-let lastX = 0;
-let lastY = 0;
-
-function getPos(e){
-  e.preventDefault(); // PENTING: biar ga ke scroll
-  const rect = canvas.getBoundingClientRect();
-  let x = (e.touches?e.touches[0].clientX:e.clientX)-rect.left;
-  let y = (e.touches?e.touches[0].clientY:e.clientY)-rect.top;
-  return {x,y}
-}
-
-function startDraw(e){
-  drawing=true;
-  const pos = getPos(e);
-  lastX=pos.x; lastY=pos.y;
-}
-function draw(e){
-  if(!drawing) return;
-  e.preventDefault();
-  const pos = getPos(e);
-  ctx.beginPath();
-  ctx.moveTo(lastX, lastY);
-  ctx.lineTo(pos.x, pos.y);
-  ctx.strokeStyle='#000';
-  ctx.lineWidth=3; // tebelin biar jelas
-  ctx.lineCap = 'round';
-  ctx.stroke();
-  lastX=pos.x; lastY=pos.y;
-}
-function stopDraw(){drawing=false;}
-
-canvas.addEventListener('mousedown', startDraw);
-canvas.addEventListener('mousemove', draw);
-canvas.addEventListener('mouseup', stopDraw);
-canvas.addEventListener('touchstart', startDraw);
-canvas.addEventListener('touchmove', draw);
-canvas.addEventListener('touchend', stopDraw);
-
-document.getElementById('btnHapus').onclick = () => ctx.clearRect(0,0,canvas.width,canvas.height);
+function getPos(e){const rect=canvas.getBoundingClientRect();let x=(e.touches?e.touches[0].clientX:e.clientX)-rect.left;let y=(e.touches?e.touches[0].clientY:e.clientY)-rect.top;return{x,y}}
+canvas.addEventListener('mousedown',e=>{drawing=true;const p=getPos(e);ctx.moveTo(p.x,p.y)});
+canvas.addEventListener('mousemove',e=>{if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.strokeStyle='#000';ctx.lineWidth=3;ctx.lineCap='round';ctx.stroke()});
+canvas.addEventListener('mouseup',()=>drawing=false);
+canvas.addEventListener('touchstart',e=>{drawing=true;const p=getPos(e);ctx.moveTo(p.x,p.y);e.preventDefault()});
+canvas.addEventListener('touchmove',e=>{if(!drawing)return;const p=getPos(e);ctx.lineTo(p.x,p.y);ctx.stroke();e.preventDefault()});
+canvas.addEventListener('touchend',()=>drawing=false);
+document.getElementById('btnHapus').onclick=()=>ctx.clearRect(0,0,canvas.width,canvas.height);
 
 document.getElementById('formAbsen').onsubmit = async function(e){
   e.preventDefault();
-  const btn = document.getElementById('btnKirim');
-  btn.disabled = true;
+  document.getElementById('inputWaktu').value = new Date().toLocaleString('id-ID');
+  document.getElementById('inputTtd').value = canvas.toDataURL('image/png');
   document.getElementById('status').innerText = "Mengirim...";
-
-  if(ctx.getImageData(0,0,canvas.width,canvas.height).data.every(channel => channel === 0)){ // cek kosong
-      alert("Tanda tangan dulu bro!");
-      btn.disabled = false;
-      return;
-  }
-
-  const data = {
-    waktu: new Date().toLocaleString('id-ID'),
-    nama: document.getElementById('nama').value,
-    shift: document.getElementById('shift').value,
-    ttd: canvas.toDataURL('image/png'),
-    catatan: document.getElementById('catatan').value
-  };
-
-  await try {
-  const response = await fetch(SCRIPT_URL, {
-    method: 'POST',
-    body: JSON.stringify(data)
-  });
-  const result = await response.json();
   
-  document.getElementById('status').innerText = "✅ Absen Berhasil Terkirim!";
-  document.getElementById('status').style.color = "#4CAF50";
-  
-} catch (error) {
-  document.getElementById('status').innerText = "❌ Gagal: " + error;
-  document.getElementById('status').style.color = "#ff6b6b";
-}
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  btn.disabled = false;
+  await fetch(SCRIPT_URL, {method:'POST', body:new FormData(this)});
+  document.getElementById('status').innerText = "✅ Berhasil Terkirim!";
+  document.getElementById('status').style.color="#4CAF50";
+  this.reset(); ctx.clearRect(0,0,canvas.width,canvas.height);
 }
 </script>
 </body>
