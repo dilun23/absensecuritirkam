@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Absen SECURITIRKAM</title>
 <style>
-body{font-family:'Arial';background:#121212;color:#eee;margin:0;padding:20px}.container{max-width:600px;margin:auto;background:#1e1e1e;padding:20px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.5)}h1{text-align:center;color:#4da3ff}label{display:block;margin-top:15px;font-weight:bold}input,textarea{width:100%;padding:10px;margin-top:5px;background:#333;border:1px solid #444;border-radius:5px;color:#eee;box-sizing:border-box}button{background:#4da3ff;color:#121212;padding:12px 20px;border:none;border-radius:5px;cursor:pointer;width:100%;margin-top:20px;font-size:16px;font-weight:bold}button:hover{background:#82c1ff}#preview{max-width:100%;margin-top:10px;border-radius:5px}.data-list{margin-top:30px}table{width:100%;border-collapse:collapse}th,td{border:1px solid #444;padding:8px;text-align:left;font-size:12px}th{background:#4da3ff;color:#121212}.error{color:#ff6b6b;font-size:12px}
+body{font-family:'Arial';background:#121212;color:#eee;margin:0;padding:20px}.container{max-width:600px;margin:auto;background:#1e1e1e;padding:20px;border-radius:10px}h1{text-align:center;color:#4da3ff}label{display:block;margin-top:15px;font-weight:bold}input,textarea{width:100%;padding:10px;margin-top:5px;background:#333;border:1px solid #444;border-radius:5px;color:#eee;box-sizing:border-box}button{background:#4da3ff;color:#121212;padding:12px 20px;border:none;border-radius:5px;cursor:pointer;width:100%;margin-top:20px;font-size:16px;font-weight:bold}button:disabled{background:#555}#preview{max-width:100%;margin-top:10px;border-radius:5px}.error{color:#ff6b6b;font-size:12px}#status{text-align:center;margin-top:10px;font-weight:bold}
 </style>
 </head>
 <body>
@@ -26,23 +26,53 @@ body{font-family:'Arial';background:#121212;color:#eee;margin:0;padding:20px}.co
 <label>Catatan</label>
 <textarea id="catatan" rows="3"></textarea>
 
-<button type="submit">KIRIM ABSEN</button>
+<button type="submit" id="btnKirim">KIRIM ABSEN</button>
+<p id="status"></p>
 </form>
-
-<div class="data-list">
-<h2>Data Absen Hari Ini</h2>
-<button onclick="exportExcel()">Export ke Excel</button>
-<table id="tabelAbsen"><thead><tr><th>Waktu</th><th>Nama</th><th>Shift/Tugas</th><th>Foto</th><th>Catatan</th></tr></thead><tbody></tbody></table>
-</div>
 </div>
 
 <script>
-let dataAbsen = JSON.parse(localStorage.getItem('absenSecuritirkam')) || [];
-document.getElementById('foto').onchange = function(e){const file=e.target.files[0];const reader=new FileReader();reader.onload=function(e){document.getElementById('preview').src=e.target.result};reader.readAsDataURL(file)};
-document.getElementById('formAbsen').onsubmit = function(e){e.preventDefault();const nama=document.getElementById('nama').value;const shift=document.getElementById('shift').value;const foto=document.getElementById('preview').src;const catatan=document.getElementById('catatan').value;const waktu=new Date().toLocaleString('id-ID');dataAbsen.push({waktu,nama,shift,foto,catatan});localStorage.setItem('absenSecuritirkam',JSON.stringify(dataAbsen));alert('Absen berhasil!');this.reset();document.getElementById('preview').src='';tampilkanData();}
-function tampilkanData(){const tbody=document.querySelector('#tabelAbsen tbody');tbody.innerHTML='';dataAbsen.slice().reverse().forEach(d=>{tbody.innerHTML+=`<tr><td>${d.waktu}</td><td>${d.nama}</td><td>${d.shift}</td><td><img src="${d.foto}" width="50"></td><td>${d.catatan}</td></tr>`})}
-function exportExcel(){let csv="Waktu,Nama,Shift,Catatan\n";dataAbsen.forEach(d=>{csv+=`${d.waktu},${d.nama},${d.shift},"${d.catatan}"\n`});const blob=new Blob([csv],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='data_absen_securitirkam.csv';a.click();}
-tampilkanData();
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzb88VhVNsL80X0MfOP0qvYGulWpC19cXaloup9JufElBoOzHpCg6-8giRsmIkjjqW_PQ/exec"; // <-- GANTI INI DENGAN LINK WEB APP DARI STEP 1
+
+let fotoBase64 = "";
+document.getElementById('foto').onchange = function(e){
+  const file=e.target.files[0];
+  const reader=new FileReader();
+  reader.onload=function(e){
+    fotoBase64 = e.target.result;
+    document.getElementById('preview').src = fotoBase64;
+  };
+  reader.readAsDataURL(file);
+};
+
+document.getElementById('formAbsen').onsubmit = async function(e){
+  e.preventDefault();
+  const btn = document.getElementById('btnKirim');
+  const status = document.getElementById('status');
+  btn.disabled = true;
+  status.innerText = "Mengirim...";
+  
+  const data = {
+    waktu: new Date().toLocaleString('id-ID'),
+    nama: document.getElementById('nama').value,
+    shift: document.getElementById('shift').value,
+    foto: fotoBase64,
+    catatan: document.getElementById('catatan').value
+  };
+
+  try {
+    await fetch(SCRIPT_URL, {method: 'POST', body: JSON.stringify(data)});
+    status.innerText = "✅ Absen Berhasil Terkirim ke Google Sheet!";
+    status.style.color = "#4CAF50";
+    this.reset();
+    document.getElementById('preview').src='';
+    fotoBase64 = "";
+  } catch (error) {
+    status.innerText = "❌ Gagal Kirim. Cek Koneksi Internet";
+    status.style.color = "#ff6b6b";
+  }
+  btn.disabled = false;
+}
 </script>
 </body>
 </html>
